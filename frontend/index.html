@@ -1,0 +1,447 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1020">
+    <title>InkFlow AI | Blog Writing Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+
+        <aside class="sidebar">
+            <a class="brand" href="#">
+                <span class="brand-icon">✦</span>
+                <span>InkFlow<span class="brand-ai"> AI</span></span>
+            </a>
+
+            <p class="nav-label">WORKSPACE</p>
+
+            <button class="nav-item active" type="button">
+                <span>✎</span> Blog Writer
+            </button>
+
+            <div class="sidebar-note">
+                <span class="status-dot"></span>
+                <span>AI engine connected</span>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="avatar">AI</div>
+                <div>
+                    <strong>InkFlow Assistant</strong>
+                    <p>Powered by Gemini</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">AI CONTENT STUDIO</p>
+                    <h1>Your next great blog starts here.</h1>
+                    <p class="subtitle">
+                        Research, write and refine your ideas with AI.
+                    </p>
+                </div>
+
+                <div class="engine-badge">
+                    <span class="status-dot"></span>
+                    System ready
+                </div>
+            </header>
+
+            <!-- BLOG GENERATOR -->
+            <section class="generator-card">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="step-label">01 / CREATE</span>
+                        <h2>What do you want to write about?</h2>
+                    </div>
+
+                    <span class="sparkle">✦</span>
+                </div>
+
+                <form id="blog-form">
+
+                    <label for="topic">BLOG TOPIC</label>
+
+                    <textarea
+                        id="topic"
+                        name="topic"
+                        placeholder="e.g. How AI is transforming education..."
+                        minlength="3"
+                        maxlength="300"
+                        required
+                    ></textarea>
+
+                    <div class="input-footer">
+                        <span>Be specific for a better result.</span>
+                        <span id="char-count">0 / 300</span>
+                    </div>
+
+                    <!-- WRITING CONTROLS -->
+                    <div class="writing-options">
+
+                        <div class="option-field">
+                            <label for="blog-length">BLOG LENGTH</label>
+
+                            <select id="blog-length" name="blog_length">
+                                <option value="short">Short — 500 words</option>
+                                <option value="medium" selected>Medium — 1,000 words</option>
+                                <option value="long">Long — 1,500 words</option>
+                                <option value="detailed">Detailed — 2,000 words</option>
+                            </select>
+                        </div>
+
+                        <div class="option-field">
+                            <label for="writing-tone">WRITING TONE</label>
+
+                            <select id="writing-tone" name="writing_tone">
+                                <option value="professional" selected>Professional</option>
+                                <option value="conversational">Conversational</option>
+                                <option value="friendly">Friendly</option>
+                                <option value="academic">Academic</option>
+                                <option value="persuasive">Persuasive</option>
+                            </select>
+                        </div>
+
+                        <div class="option-field">
+                            <label for="target-audience">TARGET AUDIENCE</label>
+
+                            <select id="target-audience" name="target_audience">
+                                <option value="general" selected>General readers</option>
+                                <option value="beginners">Beginners</option>
+                                <option value="students">Students</option>
+                                <option value="professionals">Professionals</option>
+                                <option value="technical">Technical experts</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <button
+                        class="generate-button"
+                        id="generate-btn"
+                        type="submit"
+                    >
+                        <span id="button-icon">✦</span>
+                        <span id="button-text">Generate my blog</span>
+                        <span class="button-arrow">→</span>
+                    </button>
+
+                </form>
+            </section>
+
+            <!-- AI WORKFLOW PROGRESS -->
+            <section class="progress-card hidden" id="progress-card">
+
+                <div class="progress-top">
+                    <div>
+                        <span class="step-label">AI WORKFLOW</span>
+
+                        <h3 id="progress-title">
+                            Creating your blog...
+                        </h3>
+
+                        <p id="progress-message">
+                            Your AI agent is preparing your blog.
+                        </p>
+                    </div>
+
+                    <div class="progress-percentage" id="progress-percentage">
+                        0%
+                    </div>
+                </div>
+
+                <div
+                    class="progress-track"
+                    role="progressbar"
+                    aria-label="Blog generation progress"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    id="progress-track"
+                >
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <div class="workflow-steps">
+
+                    <div class="workflow-step" id="step-research">
+                        <span class="workflow-step-icon">1</span>
+                        <span>Research</span>
+                    </div>
+
+                    <div class="workflow-step" id="step-planning">
+                        <span class="workflow-step-icon">2</span>
+                        <span>Planning</span>
+                    </div>
+
+                    <div class="workflow-step" id="step-writing">
+                        <span class="workflow-step-icon">3</span>
+                        <span>Writing</span>
+                    </div>
+
+                    <div class="workflow-step" id="step-assembly">
+                        <span class="workflow-step-icon">4</span>
+                        <span>Assembly</span>
+                    </div>
+
+                    <div class="workflow-step" id="step-proofreading">
+                        <span class="workflow-step-icon">5</span>
+                        <span>Proofreading</span>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- BLOG RESULT -->
+            <section class="result-section hidden" id="result-section">
+
+                <div class="result-header">
+
+                    <div>
+                        <span class="step-label">02 / YOUR RESULT</span>
+
+                        <h2>Your generated blog</h2>
+
+                        <p class="result-subtitle">
+                            Your AI-generated article is ready to review.
+                        </p>
+                    </div>
+
+                    <!-- EXPORT OPTIONS -->
+                    <div class="export-actions">
+
+                        <button
+                            id="download-btn"
+                            class="secondary-button"
+                            type="button"
+                        >
+                            ↓ Markdown
+                        </button>
+
+                        <button
+                            id="export-pdf-btn"
+                            class="secondary-button"
+                            type="button"
+                        >
+                            ↓ PDF
+                        </button>
+
+                        <button
+                            id="export-docx-btn"
+                            class="secondary-button"
+                            type="button"
+                        >
+                            ↓ Word DOCX
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- BLOG STATISTICS -->
+                <div class="stats-grid" id="blog-stats">
+
+                    <div class="stat-card">
+                        <span class="stat-icon">▤</span>
+
+                        <div>
+                            <p>Word count</p>
+                            <strong id="word-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <span class="stat-icon">◷</span>
+
+                        <div>
+                            <p>Reading time</p>
+                            <strong id="reading-time">1 min</strong>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <span class="stat-icon">↗</span>
+
+                        <div>
+                            <p>Research sources</p>
+                            <strong id="source-count">0</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- BLOG DISPLAY AND EDITOR -->
+                <div class="result-card">
+
+                    <div class="result-meta">
+                        <span class="result-dot"></span>
+
+                        GENERATED WITH INKFLOW AI
+
+                        <button
+                            id="edit-toggle-btn"
+                            class="text-button"
+                            type="button"
+                        >
+                            Edit blog
+                        </button>
+
+                        <button
+                            id="copy-btn"
+                            class="text-button"
+                            type="button"
+                        >
+                            Copy blog
+                        </button>
+                    </div>
+
+                    <div id="edit-panel" class="edit-panel hidden">
+
+                        <label for="blog-editor">
+                            EDIT BLOG CONTENT (MARKDOWN)
+                        </label>
+
+                        <textarea
+                            id="blog-editor"
+                            rows="18"
+                            placeholder="Your blog will appear here for editing..."
+                        ></textarea>
+
+                        <div class="edit-actions">
+
+                            <button
+                                id="apply-edit-btn"
+                                class="primary-small-button"
+                                type="button"
+                            >
+                                Apply edits
+                            </button>
+
+                            <button
+                                id="cancel-edit-btn"
+                                class="secondary-button"
+                                type="button"
+                            >
+                                Cancel
+                            </button>
+
+                        </div>
+                    </div>
+
+                    <article id="blog-output" class="blog-output"></article>
+
+                </div>
+
+                <!-- AI REGENERATION -->
+                <section id="revision-card" class="revision-card">
+
+                    <div class="revision-heading">
+                        <div>
+                            <span class="step-label">03 / REFINE</span>
+
+                            <h3>Want to improve this blog?</h3>
+
+                            <p>
+                                Tell Gemini what to change. Your existing blog
+                                and sources will be kept where possible.
+                            </p>
+                        </div>
+                    </div>
+
+                    <label for="revision-instructions">
+                        REVISION INSTRUCTIONS
+                    </label>
+
+                    <textarea
+                        id="revision-instructions"
+                        rows="3"
+                        maxlength="1500"
+                        placeholder="e.g. Make the introduction more engaging, simplify the language, or add a stronger conclusion."
+                    ></textarea>
+
+                    <div class="revision-actions">
+
+                        <span
+                            id="revision-status"
+                            class="revision-status"
+                            aria-live="polite"
+                        >
+                            Your current blog will be used as the starting point.
+                        </span>
+
+                        <button
+                            id="regenerate-btn"
+                            class="generate-button revision-button"
+                            type="button"
+                        >
+                            <span>✦</span>
+
+                            <span id="regenerate-button-text">
+                                Regenerate blog
+                            </span>
+
+                            <span class="button-arrow">→</span>
+                        </button>
+
+                    </div>
+                </section>
+
+                <!-- RESEARCH SOURCES -->
+                <div class="sources-card hidden" id="sources-card">
+                    <h3>Research sources</h3>
+                    <div id="sources-list"></div>
+                </div>
+
+            </section>
+
+            <!-- ERROR MESSAGE -->
+            <div
+                id="error-message"
+                class="error-message hidden"
+                role="alert"
+            ></div>
+
+            <!-- FOOTER -->
+            <footer class="footer">
+                <span>InkFlow AI</span>
+                <span>Built with Gemini · LangGraph · Tavily</span>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- PDF EXPORT LIBRARY -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- WORD DOCX EXPORT LIBRARY -->
+    <!-- Updated CDN URL -->
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
+    <!-- DOCX LIBRARY DIAGNOSTIC -->
+    <script>
+        window.addEventListener("load", function () {
+            if (!window.docx || !window.docx.Packer) {
+                console.error(
+                    "InkFlow AI: DOCX library did not load. Check your internet connection or CDN access."
+                );
+            } else {
+                console.log(
+                    "InkFlow AI: DOCX library loaded successfully."
+                );
+            }
+        });
+    </script>
+
+    <!-- EXISTING FRONTEND JAVASCRIPT -->
+    <script src="script.js"></script>
+
+</body>
+</html>
