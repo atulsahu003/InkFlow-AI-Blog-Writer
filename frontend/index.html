@@ -5,22 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1020">
+    <meta name="description" content="InkFlow AI researches, writes, refines, and exports blogs with an AI-powered writing workflow.">
     <title>InkFlow AI | Blog Writing Agent</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-shell">
 
+        <!-- SIDEBAR -->
         <aside class="sidebar">
-            <a class="brand" href="#">
+            <a class="brand" href="#" aria-label="InkFlow AI home">
                 <span class="brand-icon">✦</span>
                 <span>InkFlow<span class="brand-ai"> AI</span></span>
             </a>
 
             <p class="nav-label">WORKSPACE</p>
 
-            <button class="nav-item active" type="button">
+            <button class="nav-item active" id="writer-nav-btn" type="button">
                 <span>✎</span> Blog Writer
+            </button>
+
+            <button class="nav-item" id="history-nav-btn" type="button">
+                <span>▤</span> Blog History
             </button>
 
             <div class="sidebar-note">
@@ -28,38 +34,257 @@
                 <span>AI engine connected</span>
             </div>
 
-            <div class="sidebar-bottom">
-                <div class="avatar">AI</div>
-                <div>
-                    <strong>InkFlow Assistant</strong>
-                    <p>Powered by Gemini</p>
+            <div class="sidebar-bottom account-sidebar">
+                <div class="avatar" id="account-avatar">AI</div>
+
+                <div class="account-sidebar-copy">
+                    <strong id="account-name">Not signed in</strong>
+                    <p id="account-email">Sign in to save blogs</p>
                 </div>
+
+                <button
+                    id="logout-btn"
+                    class="logout-button hidden"
+                    type="button"
+                >
+                    Log out
+                </button>
             </div>
         </aside>
 
+        <!-- MAIN WORKSPACE -->
         <main class="main-content">
 
+            <!-- LOGIN AND SIGNUP -->
+            <section
+                class="auth-card"
+                id="auth-card"
+                aria-labelledby="auth-title"
+            >
+                <div class="auth-intro">
+                    <span class="step-label">YOUR WORKSPACE</span>
+
+                    <h2 id="auth-title">Welcome to InkFlow AI</h2>
+
+                    <p>
+                        Sign in to save your blogs and access your writing
+                        history from your account.
+                    </p>
+                </div>
+
+                <div class="auth-tabs" role="tablist" aria-label="Account options">
+                    <button
+                        type="button"
+                        id="login-tab"
+                        class="auth-tab active"
+                        role="tab"
+                        aria-selected="true"
+                    >
+                        Log in
+                    </button>
+
+                    <button
+                        type="button"
+                        id="signup-tab"
+                        class="auth-tab"
+                        role="tab"
+                        aria-selected="false"
+                    >
+                        Create account
+                    </button>
+                </div>
+
+                <form id="auth-form" method="post">
+
+
+                    <!-- SIGNUP NAME -->
+                    <div id="signup-name-field" class="auth-field hidden">
+                        <label for="auth-name">FULL NAME</label>
+
+                        <input
+                            id="auth-name"
+                            name="name"
+                            type="text"
+                            maxlength="100"
+                            autocomplete="name"
+                            placeholder="Your name"
+                        >
+                    </div>
+
+                    <!-- EMAIL -->
+                    <div class="auth-field">
+                        <label for="auth-email">EMAIL ADDRESS</label>
+
+                        <input
+                            id="auth-email"
+                            name="email"
+                            type="email"
+                            maxlength="255"
+                            autocomplete="email"
+                            required
+                            placeholder="you@example.com"
+                        >
+                    </div>
+
+                    <!-- PASSWORD WITH SHOW/HIDE -->
+                    <div class="auth-field">
+                        <label for="auth-password">PASSWORD</label>
+
+                        <div class="password-input-wrap">
+                            <input
+                                id="auth-password"
+                                name="password"
+                                type="password"
+                                minlength="8"
+                                autocomplete="current-password"
+                                required
+                                placeholder="At least 8 characters"
+                            >
+
+                            <button
+                                class="password-toggle"
+                                id="password-toggle-btn"
+                                type="button"
+                                aria-label="Show password"
+                                aria-pressed="false"
+                                title="Show password"
+                            >
+                                <svg
+                                    class="password-toggle-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M2 12s3.6-7 10-7c2.1 0 4 .7 5.6 1.8M22 12s-3.6 7-10 7c-2.1 0-4-.7-5.6-1.8"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                    <path
+                                        d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AUTH SUBMIT -->
+                    <button
+                        class="generate-button auth-submit"
+                        id="auth-submit-btn"
+                        type="submit"
+                    >
+                        Log in
+                        <span class="button-arrow">→</span>
+                    </button>
+
+                    <p class="auth-hint" id="auth-hint" aria-live="polite">
+                        Use your InkFlow account to continue.
+                    </p>
+
+                </form>
+            </section>
+
+            <!-- PAGE HEADER -->
             <header class="topbar">
-                <div>
+                <div class="topbar-copy">
                     <p class="eyebrow">AI CONTENT STUDIO</p>
+
                     <h1>Your next great blog starts here.</h1>
+
                     <p class="subtitle">
                         Research, write and refine your ideas with AI.
                     </p>
                 </div>
 
-                <div class="engine-badge">
-                    <span class="status-dot"></span>
-                    System ready
+                <div class="topbar-actions">
+                    <div class="engine-badge">
+                        <span class="status-dot"></span>
+                        System ready
+                    </div>
+
+                    <!-- DARK / LIGHT THEME SWITCHER -->
+                    <button
+                        type="button"
+                        id="theme-toggle-btn"
+                        class="theme-toggle-btn"
+                        aria-label="Switch to light theme"
+                        title="Switch to light theme"
+                    >
+                        <svg
+                            id="theme-toggle-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="4"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            />
+                            <path
+                                d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                        <span id="theme-toggle-label">Light mode</span>
+                    </button>
                 </div>
             </header>
 
+            <!-- SAVED BLOG HISTORY -->
+            <section
+                class="history-section hidden"
+                id="history-section"
+            >
+                <div class="history-heading">
+                    <div>
+                        <span class="step-label">YOUR LIBRARY</span>
+
+                        <h2>Blog History</h2>
+
+                        <p class="subtitle">
+                            Open a saved article or remove one you no longer need.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        id="refresh-history-btn"
+                    >
+                        ↻ Refresh
+                    </button>
+                </div>
+
+                <div
+                    id="history-status"
+                    class="history-status"
+                    aria-live="polite"
+                >
+                    Loading your saved blogs...
+                </div>
+
+                <div id="history-list" class="history-list"></div>
+            </section>
+
             <!-- BLOG GENERATOR -->
-            <section class="generator-card">
+            <section class="generator-card" id="writer-section">
 
                 <div class="section-heading">
                     <div>
                         <span class="step-label">01 / CREATE</span>
+
                         <h2>What do you want to write about?</h2>
                     </div>
 
@@ -84,7 +309,7 @@
                         <span id="char-count">0 / 300</span>
                     </div>
 
-                    <!-- WRITING CONTROLS -->
+                    <!-- WRITING OPTIONS -->
                     <div class="writing-options">
 
                         <div class="option-field">
@@ -92,9 +317,13 @@
 
                             <select id="blog-length" name="blog_length">
                                 <option value="short">Short — 500 words</option>
-                                <option value="medium" selected>Medium — 1,000 words</option>
+                                <option value="medium" selected>
+                                    Medium — 1,000 words
+                                </option>
                                 <option value="long">Long — 1,500 words</option>
-                                <option value="detailed">Detailed — 2,000 words</option>
+                                <option value="detailed">
+                                    Detailed — 2,000 words
+                                </option>
                             </select>
                         </div>
 
@@ -102,8 +331,12 @@
                             <label for="writing-tone">WRITING TONE</label>
 
                             <select id="writing-tone" name="writing_tone">
-                                <option value="professional" selected>Professional</option>
-                                <option value="conversational">Conversational</option>
+                                <option value="professional" selected>
+                                    Professional
+                                </option>
+                                <option value="conversational">
+                                    Conversational
+                                </option>
                                 <option value="friendly">Friendly</option>
                                 <option value="academic">Academic</option>
                                 <option value="persuasive">Persuasive</option>
@@ -113,12 +346,21 @@
                         <div class="option-field">
                             <label for="target-audience">TARGET AUDIENCE</label>
 
-                            <select id="target-audience" name="target_audience">
-                                <option value="general" selected>General readers</option>
+                            <select
+                                id="target-audience"
+                                name="target_audience"
+                            >
+                                <option value="general" selected>
+                                    General readers
+                                </option>
                                 <option value="beginners">Beginners</option>
                                 <option value="students">Students</option>
-                                <option value="professionals">Professionals</option>
-                                <option value="technical">Technical experts</option>
+                                <option value="professionals">
+                                    Professionals
+                                </option>
+                                <option value="technical">
+                                    Technical experts
+                                </option>
                             </select>
                         </div>
 
@@ -138,8 +380,10 @@
             </section>
 
             <!-- AI WORKFLOW PROGRESS -->
-            <section class="progress-card hidden" id="progress-card">
-
+            <section
+                class="progress-card hidden"
+                id="progress-card"
+            >
                 <div class="progress-top">
                     <div>
                         <span class="step-label">AI WORKFLOW</span>
@@ -153,7 +397,10 @@
                         </p>
                     </div>
 
-                    <div class="progress-percentage" id="progress-percentage">
+                    <div
+                        class="progress-percentage"
+                        id="progress-percentage"
+                    >
                         0%
                     </div>
                 </div>
@@ -167,7 +414,10 @@
                     aria-valuenow="0"
                     id="progress-track"
                 >
-                    <div class="progress-fill" id="progress-fill"></div>
+                    <div
+                        class="progress-fill"
+                        id="progress-fill"
+                    ></div>
                 </div>
 
                 <div class="workflow-steps">
@@ -200,8 +450,11 @@
                 </div>
             </section>
 
-            <!-- BLOG RESULT -->
-            <section class="result-section hidden" id="result-section">
+            <!-- GENERATED BLOG RESULT -->
+            <section
+                class="result-section hidden"
+                id="result-section"
+            >
 
                 <div class="result-header">
 
@@ -303,6 +556,7 @@
                         </button>
                     </div>
 
+                    <!-- EDITOR -->
                     <div id="edit-panel" class="edit-panel hidden">
 
                         <label for="blog-editor">
@@ -336,13 +590,18 @@
                         </div>
                     </div>
 
-                    <article id="blog-output" class="blog-output"></article>
+                    <article
+                        id="blog-output"
+                        class="blog-output"
+                    ></article>
 
                 </div>
 
-                <!-- AI REGENERATION -->
-                <section id="revision-card" class="revision-card">
-
+                <!-- BLOG REGENERATION -->
+                <section
+                    id="revision-card"
+                    class="revision-card"
+                >
                     <div class="revision-heading">
                         <div>
                             <span class="step-label">03 / REFINE</span>
@@ -395,7 +654,10 @@
                 </section>
 
                 <!-- RESEARCH SOURCES -->
-                <div class="sources-card hidden" id="sources-card">
+                <div
+                    class="sources-card hidden"
+                    id="sources-card"
+                >
                     <h3>Research sources</h3>
                     <div id="sources-list"></div>
                 </div>
@@ -422,7 +684,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- WORD DOCX EXPORT LIBRARY -->
-    <!-- Updated CDN URL -->
     <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
     <!-- DOCX LIBRARY DIAGNOSTIC -->
@@ -440,7 +701,7 @@
         });
     </script>
 
-    <!-- EXISTING FRONTEND JAVASCRIPT -->
+    <!-- FRONTEND JAVASCRIPT -->
     <script src="script.js"></script>
 
 </body>

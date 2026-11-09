@@ -8,3 +8,12 @@ streamlit
 pandas
 google-genai
 pillow
+
+# Backend API
+fastapi
+uvicorn[standard]
+
+# Database and migrations
+sqlalchemy
+psycopg[binary]
+alembic

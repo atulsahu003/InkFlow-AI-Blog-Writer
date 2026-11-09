@@ -434,6 +434,7 @@ function displayBlog(data) {
     }
 
     currentBlog = data.blog_markdown;
+    currentSavedBlogId = data.saved_blog_id ?? null;
     currentSources = Array.isArray(data.sources) ? data.sources : [];
 
     const displayText = currentBlog
@@ -561,10 +562,10 @@ form.addEventListener("submit", async (event) => {
     try {
         const response = await fetch(`${API_URL}/generate/stream`, {
             method: "POST",
-            headers: {
+            headers: authHeaders({
                 "Content-Type": "application/json",
                 "Accept": "text/event-stream"
-            },
+            }),
             body: JSON.stringify({
                 topic,
                 blog_length: blogLengthInput.value,
@@ -868,7 +869,7 @@ regenerateBtn.addEventListener("click", async () => {
     try {
         const response = await fetch(`${API_URL}/regenerate`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
                 topic: topicInput.value.trim() || "Blog topic",
                 blog_markdown: currentBlog,
@@ -924,3 +925,463 @@ regenerateBtn.addEventListener("click", async () => {
 });
 
 console.log("InkFlow AI initialized with editing and all export options.");
+
+// -------------------- Account + saved blog history --------------------
+const AUTH_URL = "http://127.0.0.1:8000/auth";
+const TOKEN_KEY = "inkflow_access_token";
+const USER_KEY = "inkflow_user";
+let authMode = "login";
+let currentUser = null;
+let currentSavedBlogId = null;
+
+const authCard = $("auth-card");
+const authForm = $("auth-form");
+const authNameField = $("signup-name-field");
+const authNameInput = $("auth-name");
+const authEmailInput = $("auth-email");
+const authPasswordInput = $("auth-password");
+const passwordToggleBtn = $("password-toggle-btn");
+const authSubmitBtn = $("auth-submit-btn");
+const authHint = $("auth-hint");
+const loginTab = $("login-tab");
+const signupTab = $("signup-tab");
+const logoutBtn = $("logout-btn");
+const accountName = $("account-name");
+const accountEmail = $("account-email");
+const accountAvatar = $("account-avatar");
+const writerNavBtn = $("writer-nav-btn");
+const historyNavBtn = $("history-nav-btn");
+const writerSection = $("writer-section");
+const historySection = $("history-section");
+const historyList = $("history-list");
+const historyStatus = $("history-status");
+const refreshHistoryBtn = $("refresh-history-btn");
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function getStoredUser() {
+    try {
+        return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+    } catch {
+        return null;
+    }
+}
+
+function authHeaders(extra = {}) {
+    const headers = { ...extra };
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+}
+
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: authHeaders(options.headers || {})
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        if (response.status === 401 && getToken()) {
+            clearSession(false);
+        }
+        const detail = data.detail;
+        throw new Error(typeof detail === "string" ? detail : (detail ? JSON.stringify(detail) : `Request failed (${response.status})`));
+    }
+    return data;
+}
+
+
+function updatePasswordToggle() {
+    const isVisible = authPasswordInput.type === "text";
+    passwordToggleBtn.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
+    passwordToggleBtn.setAttribute("title", isVisible ? "Hide password" : "Show password");
+    passwordToggleBtn.setAttribute("aria-pressed", String(isVisible));
+    passwordToggleBtn.innerHTML = isVisible
+        ? `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+               <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+               <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+           </svg>`
+        : `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+               <path d="M2 12s3.6-7 10-7c2.1 0 4 .7 5.6 1.8M22 12s-3.6 7-10 7c-2.1 0-4-.7-5.6-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+               <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>`;
+}
+
+passwordToggleBtn.addEventListener("click", () => {
+    authPasswordInput.type = authPasswordInput.type === "password" ? "text" : "password";
+    updatePasswordToggle();
+    authPasswordInput.focus({ preventScroll: true });
+});
+
+function setAuthMode(mode) {
+    authMode = mode;
+    const signup = mode === "signup";
+    loginTab.classList.toggle("active", !signup);
+    signupTab.classList.toggle("active", signup);
+    loginTab.setAttribute("aria-selected", String(!signup));
+    signupTab.setAttribute("aria-selected", String(signup));
+    authNameField.classList.toggle("hidden", !signup);
+    authNameInput.required = signup;
+    authPasswordInput.autocomplete = signup ? "new-password" : "current-password";
+    authPasswordInput.type = "password";
+    updatePasswordToggle();
+    authSubmitBtn.innerHTML = `${signup ? "Create account" : "Log in"} <span class="button-arrow">→</span>`;
+    $("auth-title").textContent = signup ? "Create your InkFlow account" : "Welcome to InkFlow AI";
+    authHint.textContent = signup ? "Create an account to keep your generated blogs in one place." : "Log in to access your saved blogs.";
+}
+
+function showAccountState() {
+    const signedIn = Boolean(getToken() && currentUser);
+    authCard.classList.toggle("hidden", signedIn);
+    logoutBtn.classList.toggle("hidden", !signedIn);
+    accountName.textContent = signedIn ? (currentUser.name || "InkFlow user") : "Not signed in";
+    accountEmail.textContent = signedIn ? (currentUser.email || "Signed in") : "Sign in to save blogs";
+    accountAvatar.textContent = signedIn
+        ? String(currentUser.name || currentUser.email || "U").trim().charAt(0).toUpperCase()
+        : "AI";
+    form.querySelectorAll("input, select, textarea, button").forEach((el) => {
+        if (el.id !== "auth-submit-btn") el.disabled = !signedIn;
+    });
+    if (!signedIn) {
+        historyNavBtn.disabled = true;
+    } else {
+        historyNavBtn.disabled = false;
+    }
+}
+
+function clearSession(showMessage = true) {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    currentUser = null;
+    currentSavedBlogId = null;
+    showAccountState();
+    historyList.replaceChildren();
+    historyStatus.textContent = "Log in to see your saved blogs.";
+    if (showMessage) authHint.textContent = "You have been logged out.";
+}
+
+function saveSession(data) {
+    if (!data || typeof data.access_token !== "string") {
+        throw new Error("Authentication succeeded but the server did not return an access token.");
+    }
+    localStorage.setItem(TOKEN_KEY, data.access_token);
+    const user = data.user || {};
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    currentUser = user;
+    showAccountState();
+}
+
+function formatDate(value) {
+    if (!value) return "Date unavailable";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+        ? "Date unavailable"
+        : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function setWorkspace(view) {
+    const showHistory = view === "history";
+    writerSection.classList.toggle("hidden", showHistory);
+    historySection.classList.toggle("hidden", !showHistory);
+    resultSection.classList.toggle("hidden", showHistory || !currentBlog);
+    writerNavBtn.classList.toggle("active", !showHistory);
+    historyNavBtn.classList.toggle("active", showHistory);
+    if (showHistory) loadBlogHistory();
+    else writerSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function makeHistoryCard(blog) {
+    const card = document.createElement("article");
+    card.className = "history-item";
+
+    const info = document.createElement("div");
+    info.className = "history-item-info";
+
+    const title = document.createElement("h3");
+    title.textContent = blog.title || blog.topic || "Untitled blog";
+
+    const topic = document.createElement("p");
+    topic.className = "history-topic";
+    topic.textContent = blog.topic || "No topic";
+
+    const meta = document.createElement("p");
+    meta.className = "history-date";
+    meta.textContent = `${formatDate(blog.updated_at || blog.created_at)} · ${blog.length || "Medium"} · ${blog.tone || "Professional"}`;
+
+    info.append(title, topic, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "history-item-actions";
+
+    const openBtn = document.createElement("button");
+    openBtn.type = "button";
+    openBtn.className = "secondary-button";
+    openBtn.textContent = "Open";
+    openBtn.addEventListener("click", () => openSavedBlog(blog.id));
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "danger-button";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deleteSavedBlog(blog.id, title.textContent));
+
+    actions.append(openBtn, deleteBtn);
+    card.append(info, actions);
+    return card;
+}
+
+async function loadBlogHistory() {
+    if (!getToken()) {
+        historyStatus.textContent = "Log in to see your saved blogs.";
+        historyList.replaceChildren();
+        return;
+    }
+
+    historyStatus.textContent = "Loading saved blogs...";
+    historyList.replaceChildren();
+
+    try {
+        const data = await apiRequest(`${API_URL}/blogs?limit=100&offset=0`);
+        
+const blogs = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+        ? data.items
+        : Array.isArray(data.blogs)
+            ? data.blogs
+            : [];
+
+        historyStatus.textContent = blogs.length
+            ? `${blogs.length} saved blog${blogs.length === 1 ? "" : "s"}`
+            : "No saved blogs yet. Generate your first blog to see it here.";
+        blogs.forEach((blog) => historyList.appendChild(makeHistoryCard(blog)));
+    } catch (error) {
+        historyStatus.textContent = error.message || "Could not load your blog history.";
+    }
+}
+
+async function openSavedBlog(blogId) {
+    clearError();
+    try {
+        const blog = await apiRequest(`${API_URL}/blogs/${encodeURIComponent(blogId)}`);
+        currentSavedBlogId = blog.id;
+        topicInput.value = blog.topic || "";
+        $("char-count").textContent = `${topicInput.value.length} / 300`;
+        if (blog.length) blogLengthInput.value = String(blog.length).toLowerCase();
+        if (blog.tone) writingToneInput.value = String(blog.tone).toLowerCase();
+        if (blog.audience) {
+            const audienceValue = String(blog.audience).toLowerCase();
+            if ([...targetAudienceInput.options].some((option) => option.value === audienceValue)) {
+                targetAudienceInput.value = audienceValue;
+            }
+        }
+        currentBlog = blog.content || "";
+        currentSources = [];
+        blogOutput.innerHTML = renderMarkdown(currentBlog.replace(/\n## Sources[\s\S]*$/i, "").trim());
+        renderSources(currentSources);
+        updateBlogStats(currentBlog, currentSources);
+        editPanel.classList.add("hidden");
+        editToggleBtn.textContent = "Edit blog";
+        resultSection.classList.remove("hidden");
+        historySection.classList.add("hidden");
+        writerSection.classList.remove("hidden");
+        writerNavBtn.classList.add("active");
+        historyNavBtn.classList.remove("active");
+        revisionStatus.textContent = `Loaded saved blog #${blog.id}.`;
+        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+        showError(error.message || "Could not open this saved blog.");
+    }
+}
+
+async function deleteSavedBlog(blogId, title) {
+    if (!window.confirm(`Delete "${title}" from your blog history? This cannot be undone.`)) return;
+    try {
+        await apiRequest(`${API_URL}/blogs/${encodeURIComponent(blogId)}`, { method: "DELETE" });
+        if (currentSavedBlogId === blogId) currentSavedBlogId = null;
+        await loadBlogHistory();
+    } catch (error) {
+        historyStatus.textContent = error.message || "Could not delete this blog.";
+    }
+}
+
+
+authForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    authHint.textContent =
+        authMode === "signup"
+            ? "Creating your account..."
+            : "Logging in...";
+
+    authSubmitBtn.disabled = true;
+    clearError();
+
+    try {
+        const email = authEmailInput.value.trim();
+        const password = authPasswordInput.value;
+
+        const endpoint =
+            authMode === "signup"
+                ? `${AUTH_URL}/signup`
+                : `${AUTH_URL}/login`;
+
+        const payload =
+            authMode === "signup"
+                ? {
+                    name: authNameInput.value.trim(),
+                    email,
+                    password
+                }
+                : {
+                    username: email,
+                    password
+                };
+
+        
+let response;
+
+if (authMode === "signup") {
+    response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+} else {
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
+
+    response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData.toString()
+    });
+}
+
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const detail = data.detail;
+            throw new Error(
+                typeof detail === "string"
+                    ? detail
+                    : detail
+                        ? JSON.stringify(detail)
+                        : `Authentication failed (${response.status}).`
+            );
+        }
+
+        if (authMode === "signup" && !data.access_token) {
+            authHint.textContent =
+                "Account created. Please log in.";
+            setAuthMode("login");
+            authEmailInput.value = email;
+            authPasswordInput.value = "";
+            return;
+        }
+
+        saveSession(data);
+        authHint.textContent =
+            "You are signed in. Your workspace is ready.";
+
+        await loadBlogHistory();
+        setWorkspace("writer");
+
+    } catch (error) {
+        authHint.textContent =
+            error.message || "Could not authenticate. Please try again.";
+    } finally {
+        authSubmitBtn.disabled = false;
+    }
+});
+
+loginTab.addEventListener("click", () => setAuthMode("login"));
+signupTab.addEventListener("click", () => setAuthMode("signup"));
+logoutBtn.addEventListener("click", () => {
+    clearSession();
+    setAuthMode("login");
+});
+writerNavBtn.addEventListener("click", () => setWorkspace("writer"));
+historyNavBtn.addEventListener("click", () => {
+    if (!getToken()) {
+        authHint.textContent = "Please log in to access your blog history.";
+        authCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+    }
+    setWorkspace("history");
+});
+refreshHistoryBtn.addEventListener("click", loadBlogHistory);
+
+// Restore a session after page refresh, then verify it against the protected API.
+(async function initializeAccount() {
+    setAuthMode("login");
+    const token = getToken();
+    currentUser = getStoredUser();
+    if (!token || !currentUser) {
+        showAccountState();
+        return;
+    }
+
+    showAccountState();
+    try {
+        await apiRequest(`${API_URL}/blogs?limit=1&offset=0`);
+        showAccountState();
+        loadBlogHistory();
+    } catch {
+        clearSession(false);
+        showAccountState();
+    }
+})();
+
+
+/* ============================================================
+   Premium AI Studio theme switcher
+   Existing application logic and API handlers remain unchanged.
+============================================================ */
+(() => {
+    const button = document.getElementById("theme-toggle-btn");
+    const label = document.getElementById("theme-toggle-label");
+    const icon = document.getElementById("theme-toggle-icon");
+    if (!button || !label || !icon) return;
+
+    const STORAGE_KEY = "inkflow_theme";
+
+    function renderTheme(theme) {
+        const isDark = theme === "dark";
+        document.body.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        label.textContent = isDark ? "Light mode" : "Dark mode";
+        button.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+        button.setAttribute("title", isDark ? "Switch to light theme" : "Switch to dark theme");
+        icon.innerHTML = isDark
+            ? '<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+            : '<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    }
+
+    let theme = "dark";
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === "light" || saved === "dark") theme = saved;
+    } catch (error) {
+        console.warn("InkFlow AI: theme preference could not be read.", error);
+    }
+    renderTheme(theme);
+
+    button.addEventListener("click", () => {
+        theme = document.body.dataset.theme === "dark" ? "light" : "dark";
+        renderTheme(theme);
+        try {
+            localStorage.setItem(STORAGE_KEY, theme);
+        } catch (error) {
+            console.warn("InkFlow AI: theme preference could not be saved.", error);
+        }
+    });
+})();

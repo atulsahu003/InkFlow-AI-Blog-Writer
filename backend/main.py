@@ -4,7 +4,8 @@ import re
 from io import BytesIO
 from threading import Lock
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
@@ -13,6 +14,12 @@ from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 
 from test_workers import graph, llm
+from backend.auth import router as auth_router
+from backend.blog_routes import router as blog_router
+
+from backend.auth import get_optional_current_user
+from backend.database import get_db
+from backend.models import Blog, User
 
 
 app = FastAPI(
@@ -30,10 +37,11 @@ app.add_middleware(
         "http://localhost:8000",
     ],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
-
+app.include_router(auth_router)
+app.include_router(blog_router)
 
 class BlogRequest(BaseModel):
     topic: str = Field(min_length=3, max_length=300)
@@ -98,7 +106,11 @@ def health_check():
 
 
 @app.post("/api/generate")
-def generate_blog(request: BlogRequest):
+def generate_blog(
+    request: BlogRequest,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
     topic = request.topic.strip()
 
     if len(topic) < 3:
@@ -118,17 +130,50 @@ def generate_blog(request: BlogRequest):
         with generation_lock:
             result = graph.invoke(state)
 
-        return {
+        blog_content = result.get("final_blog", "")
+        if not blog_content:
+            raise RuntimeError("The workflow returned an empty blog.")
+
+        saved_blog_id = None
+        save_warning = None
+
+        if current_user is not None:
+            try:
+                saved_blog = Blog(
+                    user_id=current_user.id,
+                    topic=topic,
+                    title=None,
+                    content=blog_content,
+                    tone=request.writing_tone,
+                    audience=request.target_audience,
+                    length=request.blog_length,
+                    language="English",
+                )
+                db.add(saved_blog)
+                db.commit()
+                db.refresh(saved_blog)
+                saved_blog_id = saved_blog.id
+            except Exception as save_error:
+                db.rollback()
+                save_warning = "Blog generated, but automatic saving failed."
+                print(f"Automatic blog save failed: {save_error}")
+
+        response = {
             "success": True,
             "topic": topic,
             "blog_length": request.blog_length,
             "writing_tone": request.writing_tone,
             "target_audience": request.target_audience,
-            "blog_markdown": result["final_blog"],
+            "blog_markdown": blog_content,
             "sources": result.get("sources", []),
+            "saved_blog_id": saved_blog_id,
         }
+        if save_warning:
+            response["save_warning"] = save_warning
+        return response
 
     except Exception as error:
+        db.rollback()
         print(f"Blog generation failed: {error}")
         raise HTTPException(
             status_code=500,
@@ -397,6 +442,8 @@ def event_stream(
     blog_length: str = "medium",
     writing_tone: str = "professional",
     target_audience: str = "general",
+    db: Session | None = None,
+    current_user: User | None = None,
 ):
     def send_event(event_name: str, **data):
         payload = {"event": event_name, **data}
@@ -507,10 +554,35 @@ def event_stream(
                 "The workflow finished without producing a blog."
             )
 
+        saved_blog_id = None
+        save_warning = None
+
+        if current_user is not None and db is not None:
+            try:
+                saved_blog = Blog(
+                    user_id=current_user.id,
+                    topic=topic,
+                    title=None,
+                    content=blog,
+                    tone=writing_tone,
+                    audience=target_audience,
+                    length=blog_length,
+                    language="English",
+                )
+                db.add(saved_blog)
+                db.commit()
+                db.refresh(saved_blog)
+                saved_blog_id = saved_blog.id
+            except Exception as save_error:
+                db.rollback()
+                save_warning = "Blog generated, but automatic saving failed."
+                print(f"Streaming blog auto-save failed: {save_error}")
+
         yield send_event(
             "status",
             stage="complete",
             message="Blog generation completed successfully.",
+            saved_blog_id=saved_blog_id,
         )
 
         yield send_event(
@@ -522,6 +594,8 @@ def event_stream(
             target_audience=target_audience,
             blog_markdown=blog,
             sources=final_state.get("sources", []),
+            saved_blog_id=saved_blog_id,
+            save_warning=save_warning,
         )
 
     except Exception as error:
@@ -537,7 +611,11 @@ def event_stream(
 
 
 @app.post("/api/generate/stream")
-def generate_blog_stream(request: BlogRequest):
+def generate_blog_stream(
+    request: BlogRequest,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
     topic = request.topic.strip()
 
     if len(topic) < 3:
@@ -552,6 +630,8 @@ def generate_blog_stream(request: BlogRequest):
             blog_length=request.blog_length,
             writing_tone=request.writing_tone,
             target_audience=request.target_audience,
+            db=db,
+            current_user=current_user,
         ),
         media_type="text/event-stream",
         headers={
@@ -559,6 +639,7 @@ def generate_blog_stream(request: BlogRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
 
 
 if __name__ == "__main__":
