@@ -74,7 +74,7 @@ InkFlow-AI-Blog-Writer/
 │
 ├── alembic.ini
 ├── requirements.txt
-├── .env
+├── .env.example
 ├── .gitignore
 └── README.md
 ```
@@ -242,3 +242,22 @@ GitHub: [@atulsahu003](https://github.com/atulsahu003)
 ---
 
 ⭐ If you find this project interesting, consider exploring the repository and its development.
+
+
+---
+
+## Application Screenshots
+
+### 1. Login Page
+<img width="1917" height="977" alt="Screenshot 2026-11-09 085608" src="https://github.com/user-attachments/assets/e7f82cf6-191b-4935-84e5-2a9840237c78" />
+
+### 2. Dashboard
+<img width="1917" height="967" alt="Screenshot 2026-11-09 085719" src="https://github.com/user-attachments/assets/7a3cb6ad-7d3e-4f64-9406-f367e46e7538" />
+
+### 3. Generated Blog
+<img width="1917" height="972" alt="Screenshot 2026-11-09 090345" src="https://github.com/user-attachments/assets/adb51bda-1d3b-4ec7-a4aa-0794ff0acb42" />
+<img width="1917" height="918" alt="Screenshot 2026-11-09 090402" src="https://github.com/user-attachments/assets/2b39ebc9-1a02-4a30-877b-c34a6b931220" />
+<img width="1917" height="976" alt="Screenshot 2026-11-09 090417" src="https://github.com/user-attachments/assets/d2ea4e88-18f6-43dd-b037-49ff669b1214" />
+<img width="1917" height="971" alt="Screenshot 2026-11-09 090433" src="https://github.com/user-attachments/assets/dba07abc-796f-4687-9bff-380551388676" />
+<img width="1910" height="977" alt="Screenshot 2026-11-09 090446" src="https://github.com/user-attachments/assets/01a6a9fe-7ab2-4c22-b3ba-871a4dc58b8a" />
+
