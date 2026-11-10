@@ -17,3 +17,5 @@ uvicorn[standard]
 sqlalchemy
 psycopg[binary]
 alembic
+
+python-docx
