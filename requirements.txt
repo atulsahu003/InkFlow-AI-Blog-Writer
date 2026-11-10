@@ -21,3 +21,5 @@ alembic
 python-docx
 
 PyJWT
+
+pwdlib[argon2]
