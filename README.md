@@ -1,87 +1,131 @@
-# InkFlow AI — Intelligent Blog Writing Agent ✍️
+# ✍️ InkFlow AI — AI-Powered Blog Writing Agent
 
-An AI-powered blog writing platform that transforms ideas into well-structured, research-backed blog articles. Built with FastAPI, LangGraph, Google Gemini, and Tavily, InkFlow AI automates research, content planning, writing, and proofreading through an intelligent multi-step workflow.
+An intelligent AI-powered blog writing platform that generates, revises, and exports high-quality blog content using **Google Gemini, LangGraph, and Tavily**.
 
-Users can generate, edit, regenerate, save, manage, and export their blogs through a modern web interface.
+InkFlow AI simplifies content creation by transforming user prompts into structured blog articles with an AI-driven workflow.
+
+<p align="center">
+
+**Live Demo:** https://inkflow-ai-frontend.onrender.com/
+
+**Backend API:** https://inkflow-ai-blog-writer.onrender.com/
+
+**API Documentation:** https://inkflow-ai-blog-writer.onrender.com/docs
+
+</p>
+
+---
+
+## 🚀 Project Overview
+
+InkFlow AI is an AI-powered blog writing application designed to automate and simplify the blog creation process.
+
+Users can generate blog articles by providing a topic and relevant instructions. The application uses Google's Gemini model and LangGraph-powered workflows to generate and refine content.
+
+The platform also supports blog history management, content revision, and DOCX export.
 
 ## ✨ Key Features
 
-### AI-Powered Blog Generation
-- Generate structured blog articles from a simple topic.
-- Research topics using Tavily Search.
-- Create blog outlines and writing plans.
-- Generate content using Google Gemini.
-- Parallel section writing through the LangGraph workflow.
-- Proofreading and source verification.
-
-### User Authentication & Blog Management
-- User registration and login.
-- JWT-based authentication.
-- Secure password handling.
-- Save generated blogs to PostgreSQL.
-- Personal blog history.
-- Open, view, and delete saved blogs.
-
-### Content Editing & Export
-- Edit generated blog content.
-- Regenerate and improve articles using custom instructions.
-- Export blogs in Markdown, PDF, and DOCX formats.
-- View blog statistics such as word count and estimated reading time.
-- Display research sources.
-
-### Modern User Interface
-- Responsive web interface.
-- Premium AI Studio-inspired design.
-- Dark and Light themes.
-- Live generation progress.
-- Login and signup interface.
-- Password visibility toggle.
+- **AI Blog Generation:** Generate structured blog articles using Google Gemini.
+- **Agentic Workflow:** Use LangGraph to organize AI-powered writing workflows.
+- **Web Research:** Integrate Tavily for web search and research.
+- **Blog Revision:** Regenerate and improve existing blog content.
+- **Blog History:** Save, retrieve, update, and delete previously generated blogs.
+- **DOCX Export:** Export generated blog content into Word documents.
+- **User Authentication:** Signup, login, and protected API endpoints.
+- **Streaming Generation:** Support streaming responses during blog generation.
+- **REST API:** Backend APIs built using FastAPI.
+- **Cloud Deployment:** Frontend and backend deployed on Render.
+- **Database Integration:** PostgreSQL database hosted on Neon.
 
 ## 🛠️ Tech Stack
 
 | Category | Technologies |
 |---|---|
-| Backend | Python, FastAPI |
-| AI Workflow | LangGraph |
-| LLM | Google Gemini |
-| Web Research | Tavily Search |
+| Programming Language | Python |
+| Backend | FastAPI |
+| AI Model | Google Gemini |
+| Agent Framework | LangGraph |
+| Web Research | Tavily |
 | Database | PostgreSQL |
-| ORM | SQLAlchemy |
+| Database ORM | SQLAlchemy |
 | Database Migrations | Alembic |
-| Authentication | JWT |
+| Authentication | JWT, Argon2 |
 | Frontend | HTML, CSS, JavaScript |
-| Document Export | Markdown, PDF, DOCX |
+| Document Export | python-docx |
+| Deployment | Render |
+| Database Hosting | Neon |
+| API Documentation | Swagger / OpenAPI |
 
-## 🏗️ Project Architecture
+## 🏗️ System Architecture
+
+```text
+             USER
+               |
+               v
+       INKFLOW FRONTEND
+        HTML / CSS / JS
+               |
+               v
+          FASTAPI
+          BACKEND
+               |
+       +-------+-------+
+       |               |
+       v               v
+  LANGGRAPH         AUTH SYSTEM
+  WORKFLOW          JWT / JWT
+       |
+       v
+   GOOGLE GEMINI
+       |
+       +------> TAVILY WEB SEARCH
+       |
+       v
+  GENERATED BLOG
+       |
+       +------> BLOG MANAGEMENT
+       |        PostgreSQL
+       |
+       +------> DOCX EXPORT
+       |
+       v
+    USER OUTPUT
+```
+
+## 📂 Project Structure
 
 ```text
 InkFlow-AI-Blog-Writer/
 │
 ├── backend/
 │   ├── main.py
-│   ├── auth.py
-│   ├── blog_routes.py
 │   ├── database.py
-│   └── models.py
+│   ├── agents/
+│   ├── api/
+│   ├── core/
+│   ├── models/
+│   ├── schemas/
+│   └── ...
 │
 ├── frontend/
 │   ├── index.html
 │   ├── style.css
 │   └── script.js
 │
-├── migrations/
-│   └── versions/
-│
-├── alembic.ini
+├── alembic/
 ├── requirements.txt
+├── alembic.ini
 ├── .env.example
 ├── .gitignore
 └── README.md
 ```
 
-*Note: The structure above highlights the main application files; additional modules may exist in the repository.*
+*Note: The structure above presents the main project components; individual folders may contain additional modules.*
 
 ## ⚙️ Installation & Setup
+
+Follow these steps to run InkFlow AI locally.
 
 ### 1. Clone the Repository
 
@@ -93,12 +137,14 @@ cd InkFlow-AI-Blog-Writer
 
 ### 2. Create a Virtual Environment
 
-**Windows PowerShell:**
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
 
 ```powershell
-python -m venv .venv
-
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate
 ```
 
 ### 3. Install Dependencies
@@ -111,153 +157,128 @@ pip install -r requirements.txt
 
 Create a `.env` file in the project root.
 
-Add the environment variables required by the application, including your:
+Add the following variables:
 
-- Google Gemini API key
-- Tavily API key
-- PostgreSQL database connection settings
-- JWT authentication configuration
+```env
+GOOGLE_API_KEY=your_google_api_key
+TAVILY_API_KEY=your_tavily_api_key
 
-Use the exact variable names expected by the backend configuration.
+AUTH_SECRET_KEY=your_secure_secret_key
 
-**Important:** Never commit `.env` files, API keys, database passwords, or authentication secrets to GitHub.
-
-### 5. Configure PostgreSQL
-
-Install and start PostgreSQL.
-
-Create the database using the database name configured for the application.
-
-Ensure that the database connection settings in `.env` are correct.
-
-### 6. Run Database Migrations
-
-After configuring the database, apply the migrations:
-
-```bash
-alembic upgrade head
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_HOST=your_database_host
+DB_PORT=5432
+DB_NAME=your_database_name
 ```
 
-### 7. Start the Backend
+**Important:** Never commit your `.env` file or expose API keys, database credentials, or authentication secrets publicly.
+
+### 5. Run Database Migrations
 
 ```bash
-uvicorn backend.main:app --reload
+python -m alembic upgrade head
 ```
 
-Backend URL:
+### 6. Start the Backend Server
+
+```bash
+python -m uvicorn backend.main:app --reload
+```
+
+Backend:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Interactive API documentation:
+API Documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-### 8. Launch the Frontend
+### 7. Run the Frontend
 
-Open the project in Visual Studio Code.
+Open `frontend/index.html` in your browser or serve the frontend using a local development server.
 
-Launch `frontend/index.html` using the Live Server extension.
+Make sure the frontend API configuration points to your local backend when running locally.
 
-Make sure the frontend API configuration points to the running backend.
+## 🔌 API Endpoints
 
-## 🔄 Application Workflow
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/signup` | Register a new user |
+| POST | `/auth/login` | Authenticate user |
+| GET | `/auth/me` | Get authenticated user |
+| POST | `/api/generate` | Generate a blog |
+| POST | `/api/generate/stream` | Stream blog generation |
+| POST | `/api/regenerate` | Revise or regenerate a blog |
+| POST | `/api/blogs` | Save a blog |
+| GET | `/api/blogs` | Retrieve blog history |
+| GET | `/api/blogs/{blog_id}` | Retrieve a specific blog |
+| PATCH | `/api/blogs/{blog_id}` | Update a blog |
+| DELETE | `/api/blogs/{blog_id}` | Delete a blog |
+| POST | `/api/export/docx` | Export blog as DOCX |
+| GET | `/api/health` | Check backend health |
 
-```text
-User Registration / Login
-          |
-          v
-     Enter Blog Topic
-          |
-          v
-     Tavily Research
-          |
-          v
-    Blog Planning
-          |
-          v
-  Parallel Content Writing
-          |
-          v
-    Proofreading
-          |
-          v
-    Generated Blog
-          |
-          v
-   Edit / Regenerate
-          |
-          v
-  Save to PostgreSQL
-          |
-          v
-  Export / Blog History
-```
+For complete request and response schemas, visit the [Swagger API Documentation](https://inkflow-ai-blog-writer.onrender.com/docs).
+
+## ☁️ Deployment
+
+InkFlow AI is deployed using cloud services.
+
+| Component | Platform |
+|---|---|
+| Frontend | Render Static Site |
+| Backend | Render Web Service |
+| Database | Neon PostgreSQL |
+| Source Code | GitHub |
+
+**Live Application:** https://inkflow-ai-frontend.onrender.com/
+
+**Backend:** https://inkflow-ai-blog-writer.onrender.com/
 
 ## 🔐 Security
 
-- JWT-based authentication.
-- Password hashing.
-- Protected user-specific blog operations.
-- Environment-based configuration for sensitive credentials.
-- `.env` and virtual environment excluded from version control.
+- Environment variables are used to manage sensitive credentials.
+- JWT-based authentication protects authorized endpoints.
+- Password hashing is implemented using Argon2.
+- Database connections use SSL.
+- API access is controlled through authentication and CORS configuration.
 
-## 🚀 Deployment
+## 🎯 Project Objectives
 
-Production deployment is planned.
+- Automate blog writing using generative AI.
+- Explore agentic AI workflows using LangGraph.
+- Integrate external web research into AI applications.
+- Build scalable REST APIs using FastAPI.
+- Implement authentication and PostgreSQL database management.
+- Deploy a complete full-stack AI application.
 
-The intended deployment architecture includes:
+## 🔮 Future Enhancements
 
-- Frontend hosting for the web application.
-- Backend hosting for the FastAPI application.
-- Managed PostgreSQL database.
-- Secure production environment variables.
-- Production API and CORS configuration.
-
-Deployment links will be added after the application is successfully deployed and tested.
-
-## 🔮 Future Improvements
-
-- Enhanced AI writing capabilities.
-- More customization options for generated blogs.
-- Additional export formats.
-- Improved research and source management.
-- Production deployment and performance optimization.
-
-## 📄 License
-
-No license has been specified yet.
+- Multiple writing tones and styles.
+- SEO optimization and keyword analysis.
+- AI-powered grammar and readability checking.
+- Blog templates and custom formatting.
+- Multi-language blog generation.
+- Improved content research and source attribution.
+- Advanced analytics and writing history.
 
 ## 👨‍💻 Author
 
 **Atul Sahu**
 
-AI & Data Science Developer
+B.Tech Computer Science Engineering — AI & Data Science
 
-GitHub: [@atulsahu003](https://github.com/atulsahu003)
-
----
-
-⭐ If you find this project interesting, consider exploring the repository and its development.
-
+- GitHub: https://github.com/atulsahu003
+- Project Repository: https://github.com/atulsahu003/InkFlow-AI-Blog-Writer
 
 ---
 
-## Application Screenshots
+<p align="center">
 
-### 1. Login Page
-<img width="1917" height="977" alt="Screenshot 2026-11-09 085608" src="https://github.com/user-attachments/assets/e7f82cf6-191b-4935-84e5-2a9840237c78" />
+**Built with ❤️ using Python, Generative AI, and Agentic Workflows.**
 
-### 2. Dashboard
-<img width="1917" height="967" alt="Screenshot 2026-11-09 085719" src="https://github.com/user-attachments/assets/7a3cb6ad-7d3e-4f64-9406-f367e46e7538" />
-
-### 3. Generated Blog
-<img width="1917" height="972" alt="Screenshot 2026-11-09 090345" src="https://github.com/user-attachments/assets/adb51bda-1d3b-4ec7-a4aa-0794ff0acb42" />
-<img width="1917" height="918" alt="Screenshot 2026-11-09 090402" src="https://github.com/user-attachments/assets/2b39ebc9-1a02-4a30-877b-c34a6b931220" />
-<img width="1917" height="976" alt="Screenshot 2026-11-09 090417" src="https://github.com/user-attachments/assets/d2ea4e88-18f6-43dd-b037-49ff669b1214" />
-<img width="1917" height="971" alt="Screenshot 2026-11-09 090433" src="https://github.com/user-attachments/assets/dba07abc-796f-4687-9bff-380551388676" />
-<img width="1910" height="977" alt="Screenshot 2026-11-09 090446" src="https://github.com/user-attachments/assets/01a6a9fe-7ab2-4c22-b3ba-871a4dc58b8a" />
-
+</p>
