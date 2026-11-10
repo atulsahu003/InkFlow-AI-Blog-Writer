@@ -19,3 +19,5 @@ psycopg[binary]
 alembic
 
 python-docx
+
+PyJWT
